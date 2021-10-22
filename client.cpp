@@ -108,6 +108,26 @@ int main(int argc, char *argv[])
 	if (isValidResponse(&filelen)){
 		std::cout << "File length is: " << filelen << " bytes" << endl;
 	}
+
+	ofstream file2("received/" + filename);
+	len = sizeof (FileRequest) + filename.size()+1;
+	for(int byteOffset = 0; byteOffset < filelen; byteOffset += MAX_MESSAGE)
+	{
+		int requestAmount = MAX_MESSAGE;
+		if(byteOffset + MAX_MESSAGE > filelen)
+		{
+			requestAmount = filelen - byteOffset;
+		}
+		char buf3[len];
+		FileRequest fq(byteOffset, requestAmount);
+		std::memcpy (buf3, &fq, sizeof (FileRequest));
+		std::strcpy (buf3 + sizeof (FileRequest), filename.c_str());
+		chan.cwrite(buf3, len);
+		char buf4[MAX_MESSAGE];
+		chan.cread(buf4, MAX_MESSAGE);
+		buf4[requestAmount] = '\0';
+		file2 << buf4;
+	}
 	
 	
 	// closing the channel    
