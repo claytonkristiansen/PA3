@@ -32,6 +32,8 @@ using namespace std;
 #define NUM_PERSONS 15  // number of person to collect data for
 #define MAX_MESSAGE 256  // maximum buffer size for each message
 
+int buffercapacity; //FIX THIS
+
 // different types of messages
 enum REQUEST_TYPE_PREFIX {DATA_REQ_TYPE, FILE_REQ_TYPE, NEWCHAN_REQ_TYPE, QUIT_REQ_TYPE, UNKNOWN_REQ_TYPE};    
 typedef __int64_t int64;

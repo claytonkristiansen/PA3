@@ -16,8 +16,6 @@
 #include "FIFOreqchannel.h"
 using namespace std;
 
-
-int buffercapacity = MAX_MESSAGE;
 char* buffer = NULL; // buffer used by the server, allocated in the main
 
 

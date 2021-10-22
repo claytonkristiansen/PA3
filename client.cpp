@@ -12,8 +12,9 @@ int main(int argc, char *argv[])
 	string filename = "";
 	bool gott = false;
 	bool gote = false;
+	buffercapacity = MAX_MESSAGE;
 	// take all the arguments first because some of these may go to the server
-	while ((opt = getopt(argc, argv, ":f:p:t:e:")) != -1) {
+	while ((opt = getopt(argc, argv, ":f:p:t:e:m:")) != -1) {
 		switch (opt) {
 			case 'f':
 				filename = optarg;
@@ -28,6 +29,9 @@ int main(int argc, char *argv[])
 			case 'e':
 				e = stoi(optarg);
 				gote = true;
+			case 'm':
+				buffercapacity = atoi(optarg);
+				break;
 		}
 	}
 
@@ -125,8 +129,7 @@ int main(int argc, char *argv[])
 		chan.cwrite(buf3, len);
 		char buf4[MAX_MESSAGE];
 		chan.cread(buf4, MAX_MESSAGE);
-		buf4[requestAmount] = '\0';
-		file2 << buf4;
+		file2.write(buf4, requestAmount);
 	}
 	
 	
