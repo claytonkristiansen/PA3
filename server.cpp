@@ -189,7 +189,6 @@ void handle_process_loop(FIFORequestChannel *channel){
 }
 
 int main(int argc, char *argv[]){
-	buffercapacity = MAX_MESSAGE;
 	int opt;
 	while ((opt = getopt(argc, argv, "m:")) != -1) {
 		switch (opt) {
@@ -198,6 +197,7 @@ int main(int argc, char *argv[]){
 				break;
 		}
 	}
+	std::cout << "server: " << buffercapacity << "\n";
 	srand(time_t(NULL));
 	for (int i=0; i<NUM_PERSONS; i++){
 		populate_file_data(i+1);

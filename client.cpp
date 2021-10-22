@@ -5,7 +5,8 @@
 using namespace std::chrono;
 using namespace std;
 
-int buffercapacity;
+string buffercapacityS;
+int buffercapacity = MAX_MESSAGE;
 
 int main(int argc, char *argv[])
 {
@@ -38,7 +39,8 @@ int main(int argc, char *argv[])
 				e = stoi(optarg);
 				gote = true;
 			case 'm':
-				buffercapacity = atoi(optarg);
+				buffercapacityS = optarg;
+				buffercapacity = stoi(optarg);
 				break;
 			case 'c':
 				newChannel = true;
@@ -51,11 +53,16 @@ int main(int argc, char *argv[])
 		EXITONERROR ("Could not create a child process for running the server");
 	}
 	if (!pid){ // The server runs in the child process
-		char* args[] = {"./server", nullptr};
+		char arr[buffercapacityS.length() + 1];
+		strcpy(arr, buffercapacityS.c_str());
+		char* args[] = {"./server", "-m", arr, nullptr};
 		if (execvp(args[0], args) < 0){
 			EXITONERROR ("Could not launch the server");
 		}
 	}
+
+	std::cout << "client: " << buffercapacity << "\n";
+	
 	FIFORequestChannel chan ("control", FIFORequestChannel::CLIENT_SIDE);
 	openChannels.push_back(chan);
 
@@ -65,8 +72,8 @@ int main(int argc, char *argv[])
 	{
 		Request nc (NEWCHAN_REQ_TYPE);
 		chan.cwrite (&nc, sizeof(nc));
-		char nameBuf[MAX_MESSAGE];
-		chan.cread(nameBuf, MAX_MESSAGE);
+		char nameBuf[buffercapacity];
+		chan.cread(nameBuf, buffercapacity);
 		FIFORequestChannel newChan(string(nameBuf), FIFORequestChannel::CLIENT_SIDE);
 		std::cout << "Created new channel named " << string(nameBuf) << "\n";
 		if(!gott)
@@ -125,10 +132,10 @@ int main(int argc, char *argv[])
 			std::cout << "File length is: " << filelen << " bytes" << endl;
 			ofstream file2("received/" + filename);
 			len = sizeof (FileRequest) + filename.size()+1;
-			for(int byteOffset = 0; byteOffset < filelen; byteOffset += MAX_MESSAGE)
+			for(int byteOffset = 0; byteOffset < filelen; byteOffset += buffercapacity)
 			{
-				int requestAmount = MAX_MESSAGE;
-				if(byteOffset + MAX_MESSAGE > filelen)
+				int requestAmount = buffercapacity;
+				if(byteOffset + buffercapacity > filelen)
 				{
 					requestAmount = filelen - byteOffset;
 				}
@@ -137,8 +144,8 @@ int main(int argc, char *argv[])
 				std::memcpy (buf3, &fq, sizeof (FileRequest));
 				std::strcpy (buf3 + sizeof (FileRequest), filename.c_str());
 				newChan.cwrite(buf3, len);
-				char buf4[MAX_MESSAGE];
-				newChan.cread(buf4, MAX_MESSAGE);
+				char buf4[buffercapacity];
+				newChan.cread(buf4, buffercapacity);
 				file2.write(buf4, requestAmount);
 			}
 		}
@@ -204,10 +211,10 @@ int main(int argc, char *argv[])
 			std::cout << "File length is: " << filelen << " bytes" << endl;
 			ofstream file2("received/" + filename);
 			len = sizeof (FileRequest) + filename.size()+1;
-			for(int byteOffset = 0; byteOffset < filelen; byteOffset += MAX_MESSAGE)
+			for(int byteOffset = 0; byteOffset < filelen; byteOffset += buffercapacity)
 			{
-				int requestAmount = MAX_MESSAGE;
-				if(byteOffset + MAX_MESSAGE > filelen)
+				int requestAmount = buffercapacity;
+				if(byteOffset + buffercapacity > filelen)
 				{
 					requestAmount = filelen - byteOffset;
 				}
@@ -216,8 +223,8 @@ int main(int argc, char *argv[])
 				std::memcpy (buf3, &fq, sizeof (FileRequest));
 				std::strcpy (buf3 + sizeof (FileRequest), filename.c_str());
 				chan.cwrite(buf3, len);
-				char buf4[MAX_MESSAGE];
-				chan.cread(buf4, MAX_MESSAGE);
+				char buf4[buffercapacity];
+				chan.cread(buf4, buffercapacity);
 				file2.write(buf4, requestAmount);
 			}
 		}
