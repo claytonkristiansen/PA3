@@ -10,7 +10,6 @@ int buffercapacity = MAX_MESSAGE;
 
 int main(int argc, char *argv[])
 {
-	ofstream timingFile("timedata.csv", ios::out | ios::app);
 	int opt;
 	int p = 1;
 	double t = 0.0;
@@ -20,7 +19,6 @@ int main(int argc, char *argv[])
 	bool gote = false;
 	bool newChannel = false;
 	int numNewChannels = 0;
-	vector<FIFORequestChannel> openChannels;
 	int64 filelen;
 	// take all the arguments first because some of these may go to the server
 	while ((opt = getopt(argc, argv, "cf:p:t:e:m:")) != -1) {
@@ -60,13 +58,10 @@ int main(int argc, char *argv[])
 			EXITONERROR ("Could not launch the server");
 		}
 	}
-
-	std::cout << "client: " << buffercapacity << "\n";
 	
-	FIFORequestChannel chan ("control", FIFORequestChannel::CLIENT_SIDE);
-	openChannels.push_back(chan);
+	FIFORequestChannel chan ("control", FIFORequestChannel::CLIENT_SIDE);		//Request control channel
 
-	auto start = high_resolution_clock::now();
+	auto start = high_resolution_clock::now();  	//starting timer
 
 	if(newChannel)		//Had to duplicate everything because of the FIFORequestChannel constructor requirements
 	{
@@ -74,7 +69,7 @@ int main(int argc, char *argv[])
 		chan.cwrite (&nc, sizeof(nc));
 		char nameBuf[buffercapacity];
 		chan.cread(nameBuf, buffercapacity);
-		FIFORequestChannel newChan(string(nameBuf), FIFORequestChannel::CLIENT_SIDE);
+		FIFORequestChannel newChan(string(nameBuf), FIFORequestChannel::CLIENT_SIDE);		//Request new channel
 		std::cout << "Created new channel named " << string(nameBuf) << "\n";
 		if(!gott)
 		{
@@ -128,14 +123,15 @@ int main(int argc, char *argv[])
 		std::strcpy (buf2 + sizeof (FileRequest), filename.c_str());
 		newChan.cwrite (buf2, len);  
 		newChan.cread (&filelen, sizeof(int64));
-		if (isValidResponse(&filelen)){
+		if (isValidResponse(&filelen))
+		{
 			std::cout << "File length is: " << filelen << " bytes" << endl;
 			ofstream file2("received/" + filename);
 			len = sizeof (FileRequest) + filename.size()+1;
 			for(int byteOffset = 0; byteOffset < filelen; byteOffset += buffercapacity)
 			{
 				int requestAmount = buffercapacity;
-				if(byteOffset + buffercapacity > filelen)
+				if(byteOffset + buffercapacity > filelen) //If this is the last request adjust requestAmount
 				{
 					requestAmount = filelen - byteOffset;
 				}
@@ -145,8 +141,8 @@ int main(int argc, char *argv[])
 				std::strcpy (buf3 + sizeof (FileRequest), filename.c_str());
 				newChan.cwrite(buf3, len);
 				char buf4[buffercapacity];
-				newChan.cread(buf4, buffercapacity);
-				file2.write(buf4, requestAmount);
+				newChan.cread(buf4, buffercapacity);	//Read data from FIFO
+				file2.write(buf4, requestAmount);		//Write data to file
 			}
 		}
 		// closing the channel    
@@ -214,7 +210,7 @@ int main(int argc, char *argv[])
 			for(int byteOffset = 0; byteOffset < filelen; byteOffset += buffercapacity)
 			{
 				int requestAmount = buffercapacity;
-				if(byteOffset + buffercapacity > filelen)
+				if(byteOffset + buffercapacity > filelen)		//If this is the last request adjust requestAmount
 				{
 					requestAmount = filelen - byteOffset;
 				}
@@ -222,16 +218,16 @@ int main(int argc, char *argv[])
 				FileRequest fq(byteOffset, requestAmount);
 				std::memcpy (buf3, &fq, sizeof (FileRequest));
 				std::strcpy (buf3 + sizeof (FileRequest), filename.c_str());
-				chan.cwrite(buf3, len);
+				chan.cwrite(buf3, len);						//Send request
 				char buf4[buffercapacity];
-				chan.cread(buf4, buffercapacity);
-				file2.write(buf4, requestAmount);
+				chan.cread(buf4, buffercapacity);			//Read data from FIFO
+				file2.write(buf4, requestAmount);			//Write data to file
 			}
 		}
 	}
 
-	auto stop = high_resolution_clock::now();
-	auto duration = duration_cast<microseconds>(stop - start);
+	auto stop = high_resolution_clock::now();					//Stop clock
+	auto duration = duration_cast<microseconds>(stop - start);	//Get time diff
 	std::cout << "Time elapsed: " << duration.count() << "\n";
 	
 	// closing the channel    
@@ -240,6 +236,4 @@ int main(int argc, char *argv[])
 	// client waiting for the server process, which is the child, to terminate
 	wait(0);
 	std::cout << "Client process exited" << endl;
-	
-	timingFile << filename << "," << filelen << "," << duration.count() << "\n";
 }
